@@ -1,15 +1,16 @@
-# Dockerfile
-FROM python:alpine
+FROM python:3:13slim
 
-# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file and install dependencies
+# Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy the rest of the application
 COPY . .
 
-# Set the entry point for the container
-CMD ["python", "app.py"]
+# Cloud Run will set this environment variable
+ENV PORT 8080
+
+# Run the web service on container startup
+CMD exec gunicorn --bind :${PORT} --workers 1 --threads 8 --timeout 0 main:app
