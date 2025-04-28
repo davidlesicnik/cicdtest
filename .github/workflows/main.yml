@@ -1,4 +1,3 @@
-# .github/workflows/main.yml
 name: CI/CD Pipeline
 
 on:
@@ -38,10 +37,14 @@ jobs:
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v1'
 
+    - name: 'View build logs'
+      run: |
+        gcloud builds log $(gcloud builds list --format="get(id)" --limit=1)
+
     - name: 'Deploy to Cloud Run'
       uses: 'google-github-actions/deploy-cloudrun@v1'
       with:
         service: 'my-app'
         region: 'us-central1'
-        source: '.'  # This tells Cloud Run to build from source
+        source: '.'
         flags: '--allow-unauthenticated'
