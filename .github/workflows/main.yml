@@ -8,11 +8,15 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
@@ -24,10 +28,23 @@ jobs:
     - name: Run tests
       run: |
         python -m pytest tests/
-    
-    - name: Deploy to Cloud Run
-      uses: google-github-actions/deploy-cloudrun@v0
+
+    - name: 'Google Auth'
+      id: 'auth'
+      uses: 'google-github-actions/auth@v1'
       with:
-        service: my-app
-        region: us-central1
-        credentials: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: 'Build and Push Container'
+      run: |
+        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app
+
+    - name: 'Deploy to Cloud Run'
+      uses: 'google-github-actions/deploy-cloudrun@v1'
+      with:
+        service: 'my-app'
+        region: 'us-central1'
+        image: 'gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-app'
